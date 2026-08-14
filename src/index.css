@@ -1,0 +1,1099 @@
+@import "tailwindcss";
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body {
+    font-family: 'Zen Maru Gothic', 'Nunito', 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: #000;
+    color: #fff;
+    overscroll-behavior: none;
+  }
+}
+
+@layer components {
+  /* Disco lights */
+  .disco-lights {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(180deg, var(--disco-color, rgba(255, 0, 255, 0.5)), transparent);
+    opacity: var(--disco-intensity, 0.5);
+    pointer-events: none;
+    z-index: 50;
+    mix-blend-mode: screen;
+    transition: all 0.3s ease;
+    animation: disco-pulse 2s infinite alternate;
+  }
+
+  @keyframes disco-pulse {
+    0% { transform: scaleY(1); opacity: calc(var(--disco-intensity) * 0.8); }
+    100% { transform: scaleY(1.2); opacity: calc(var(--disco-intensity) * 1.2); }
+  }
+  /* Intro screen */
+  .intro-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(6, 7, 14, 0.34);
+    cursor: pointer;
+    isolation: isolate;
+    will-change: opacity, transform, filter;
+  }
+
+  .intro-screen.fade-out {
+    animation: intro-shake-darken 1.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+    pointer-events: none;
+  }
+
+  @keyframes intro-shake-darken {
+    0% { transform: translate(0, 0) scale(1); filter: brightness(1); opacity: 1; }
+    3% { transform: translate(-5px, 3px) scale(1.01); filter: brightness(0.8); opacity: 1; }
+    6% { transform: translate(4px, -4px) scale(1.01); filter: brightness(0.5); opacity: 1; }
+    9% { transform: translate(-3px, 2px) scale(1.02); filter: brightness(0.3); opacity: 1; }
+    12% { transform: translate(2px, -1px) scale(1.02); filter: brightness(0.2); opacity: 1; }
+    15% { transform: translate(0, 0) scale(1.02); filter: brightness(0.15); opacity: 1; }
+    100% { transform: translate(0, 0) scale(1.08); filter: brightness(0.15); opacity: 0; }
+  }
+
+  .intro-screen.fade-out .intro-content {
+    opacity: 0;
+    transform: translateY(-7px) scale(0.98);
+    transition: opacity 0.3s ease, transform 0.4s ease;
+  }
+
+  .intro-screen.fade-out .intro-atmosphere {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  /* ── Persistent app background (image → video fallback) ── */
+  .bg-root {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background: #000;
+  }
+
+  .bg-solid-base {
+    background: #000;
+  }
+
+  .bg-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: 55% 30%;
+    object-fit: cover;
+    object-position: 55% 30%;
+    transform: scale(1.02) translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    image-rendering: auto;
+    filter: saturate(1.04) contrast(1.02);
+  }
+
+  .bg-overlay {
+    opacity: 0;
+    transition: opacity 700ms ease;
+    will-change: opacity;
+  }
+
+  .bg-overlay.is-ready {
+    opacity: 1;
+  }
+
+  .bg-video {
+    width: 100vw !important;
+    height: 100vh !important;
+    object-fit: contain !important;
+    will-change: opacity, transform;
+    transition: opacity 0.35s ease;
+  }
+
+  /* Dual-video seamless loop: active shows, standby hides underneath */
+  .bg-video-active {
+    opacity: 1;
+    z-index: 1;
+  }
+
+  .bg-video-standby {
+    opacity: 0;
+    z-index: 0;
+  }
+
+  /* When both are marked is-ready, let the active/standby classes drive opacity */
+  .bg-video.is-ready.bg-video-active {
+    opacity: 1;
+  }
+
+  .bg-video.is-ready.bg-video-standby {
+    opacity: 0;
+  }
+
+  .intro-wash {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(90deg, rgba(20, 8, 28, 0.5), rgba(24, 10, 30, 0.22) 62%, rgba(18, 8, 26, 0.38)),
+      linear-gradient(0deg, rgba(10, 3, 16, 0.34), rgba(70, 20, 60, 0.10));
+  }
+
+  .intro-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: opacity 1.1s ease, transform 1.4s cubic-bezier(0.16, 0.4, 0.24, 1);
+    will-change: transform, opacity;
+  }
+
+  .intro-flower {
+    display: grid;
+    width: 4.8rem;
+    height: 4.8rem;
+    place-items: center;
+    position: relative;
+    animation: flower-breathe 2.6s ease-in-out infinite;
+    will-change: transform, filter;
+  }
+
+  .intro-flower::before {
+    content: '';
+    position: absolute;
+    inset: 0.55rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 164, 205, 0.22), transparent 68%);
+    filter: blur(9px);
+  }
+
+  .intro-flower span {
+    position: relative;
+    z-index: 1;
+    font-size: 2.65rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 9px rgba(255, 163, 205, 0.58));
+  }
+
+  @keyframes flower-breathe {
+    0%, 100% { transform: translateY(0) scale(0.98); }
+    50% { transform: translateY(-4px) scale(1.04); }
+  }
+
+  .intro-atmosphere {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0.78;
+    transition: opacity 1.2s ease;
+  }
+
+  .intro-particle {
+    position: absolute;
+    top: -8%;
+    display: block;
+    width: var(--particle-size);
+    height: var(--particle-size);
+    font-size: var(--particle-size);
+    line-height: 1;
+    opacity: 0;
+    animation: intro-fall linear infinite;
+    animation-duration: 10s;
+    will-change: transform, opacity;
+  }
+
+  .intro-particle.snow {
+    color: rgba(255, 255, 255, 0.76);
+    text-shadow: 0 0 6px rgba(220, 232, 255, 0.68);
+  }
+
+  .intro-particle.petal {
+    filter: drop-shadow(0 0 4px rgba(255, 146, 194, 0.45));
+  }
+
+  @keyframes intro-fall {
+    0% { opacity: 0; transform: translate3d(0, -8vh, 0) rotate(0deg); }
+    12% { opacity: 0.72; }
+    55% { opacity: 0.58; transform: translate3d(var(--particle-drift), 52vh, 0) rotate(180deg); }
+    88% { opacity: 0.3; }
+    100% { opacity: 0; transform: translate3d(calc(var(--particle-drift) * -0.7), 112vh, 0) rotate(360deg); }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     Spider-Man: Brand New Day — exact title treatment
+     • Main "SPIDER-MAN" line  → Good Times (MCU font, geometric wide caps)
+     • Subtitle "One More Song" → Nunito ExtraBold Italic (golden, rounded)
+     • Tagline                  → Nunito Light Italic (warm cream)
+  ═══════════════════════════════════════════════════════════════ */
+
+  /* Shared base — block display */
+  .spidey-title {
+    text-transform: uppercase;
+    display: block;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── "SPIDER-MAN:" ── bold red face + deep blue 3-D extrusion + dark outline */
+  .spidey-title-main {
+    font-family: 'Speedy', 'Orbitron', 'Good Times', 'Bebas Neue', 'Arial Narrow', sans-serif;
+    font-weight: 400;           /* Good Times has only one weight — it's naturally heavy */
+    font-style: normal;
+    letter-spacing: 0.06em;
+    line-height: 1.0;
+
+    /* Marvel movie red face */
+    color: #d91b22;
+
+    /* Layer 1 – thin black outline all around (simulated with stacked shadows) */
+    /* Layer 2 – royal-blue depth / extrusion going bottom-right (like the movie)  */
+    /* Layer 3 – dark ambient drop                                                  */
+    text-shadow:
+      /* — black outline ring — */
+       1px  0    0   #0a0a0a,
+      -1px  0    0   #0a0a0a,
+       0    1px  0   #0a0a0a,
+       0   -1px  0   #0a0a0a,
+       1px  1px  0   #0a0a0a,
+      -1px -1px  0   #0a0a0a,
+       1px -1px  0   #0a0a0a,
+      -1px  1px  0   #0a0a0a,
+      /* — royal-blue 3-D depth extrusion (lower-right) — */
+       2px  2px  0   #1a2db5,
+       3px  3px  0   #1a2db5,
+       4px  4px  0   #142299,
+       5px  5px  0   #0e1878,
+       6px  6px  0   #0a1260,
+       7px  7px  0   #070d47,
+      /* — dark edge on the extrusion — */
+       7px  7px  1px #030820,
+      /* — ambient shadow to lift off background — */
+       4px 10px 12px rgba(0,0,0,0.65);
+
+    -webkit-text-stroke: 1.8px #080808;
+    paint-order: stroke fill;
+    filter: drop-shadow(0 5px 14px rgba(0, 0, 0, 0.55));
+  }
+
+  /* ── "One More Song" subtitle ── golden italic, matches "Brand New Day" line */
+  .spidey-subtitle {
+    font-family: 'Caveat', 'Nunito', 'Varela Round', 'Trebuchet MS', sans-serif;
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: 0.12em;
+    line-height: 1.25;
+    text-transform: uppercase;
+
+    /* Warm movie gold — matches the Brand New Day subtitle exactly */
+    color: #f4c224;
+
+    text-shadow:
+      /* dark base outline */
+       1px  0    0   #1a0e00,
+      -1px  0    0   #1a0e00,
+       0    1px  0   #1a0e00,
+       0   -1px  0   #1a0e00,
+      /* amber depth */
+       1px  1px  0   #7a5800,
+       2px  2px  0   #5e4300,
+       3px  3px  0   #3d2c00,
+      /* drop */
+       2px  5px  8px rgba(0,0,0,0.55);
+
+    -webkit-text-stroke: 0.6px #2a1800;
+    paint-order: stroke fill;
+    filter: drop-shadow(0 3px 8px rgba(0,0,0,0.45));
+  }
+
+  /* ── Tagline ── elegant, warm, quiet */
+  .spidey-tagline {
+    font-family: 'Caveat', 'Nunito', 'Trebuchet MS', sans-serif;
+    font-style: italic;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    color: rgba(255, 230, 170, 0.68);
+  }
+
+  /* ── Mobile: reduce extrusion depth slightly ── */
+  @media (max-width: 640px) {
+    .spidey-title-main {
+      text-shadow:
+         1px  0    0   #0a0a0a,
+        -1px  0    0   #0a0a0a,
+         0    1px  0   #0a0a0a,
+         0   -1px  0   #0a0a0a,
+         1px  1px  0   #0a0a0a,
+        -1px -1px  0   #0a0a0a,
+         2px  2px  0   #1a2db5,
+         3px  3px  0   #142299,
+         4px  4px  0   #0a1260,
+         4px  8px  9px rgba(0,0,0,0.6);
+      -webkit-text-stroke: 1.2px #080808;
+    }
+    .spidey-subtitle {
+      text-shadow:
+         1px  0    0   #1a0e00,
+        -1px  0    0   #1a0e00,
+         0    1px  0   #1a0e00,
+         1px  1px  0   #7a5800,
+         2px  2px  0   #3d2c00,
+         2px  4px  6px rgba(0,0,0,0.5);
+    }
+  }
+
+  /* Equalizer */
+  .equalizer {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 18px;
+  }
+
+  .eq-bar {
+    width: 3px;
+    border-radius: 1.5px;
+    background: linear-gradient(to top, #ff6b9d, #c084fc);
+    transition: height 0.15s ease;
+  }
+
+  .eq-bar.active {
+    animation: eq-bounce var(--eq-speed, 0.4s) ease-in-out infinite alternate;
+  }
+
+  @keyframes eq-bounce {
+    0% { height: var(--eq-min, 4px); }
+    100% { height: var(--eq-max, 16px); }
+  }
+
+  /* Spinning disc */
+  .disc-spin {
+    animation: spin-disc 4s linear infinite;
+    will-change: transform;
+  }
+
+  .disc-spin.paused {
+    animation-play-state: paused;
+  }
+
+  @keyframes spin-disc {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Glass card */
+  .glass-card {
+    background: rgba(24, 14, 36, 0.78);
+    backdrop-filter: blur(18px) saturate(1.18);
+    -webkit-backdrop-filter: blur(18px) saturate(1.18);
+    border: 1px solid rgba(255, 182, 213, 0.14);
+    box-shadow:
+      0 10px 30px rgba(8, 0, 18, 0.4),
+      inset 0 1px 0 rgba(255, 210, 235, 0.08),
+      0 0 0 1px rgba(255, 107, 157, 0.08);
+  }
+
+  .hero-copy {
+    min-width: 0;
+    transform: translateY(-4vh);
+  }
+
+  /* Popover Transitions */
+  .popover-container {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(12px) scale(0.96);
+    transition: opacity 0.25s cubic-bezier(0.3, 0, 0.2, 1),
+                transform 0.3s cubic-bezier(0.3, 0, 0.2, 1),
+                visibility 0.3s;
+    will-change: transform, opacity;
+    pointer-events: none;
+  }
+
+  .popover-container.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    transition: opacity 0.35s cubic-bezier(0.2, 0.9, 0.2, 1),
+                transform 0.4s cubic-bezier(0.2, 0.9, 0.2, 1),
+                visibility 0s;
+    pointer-events: auto;
+  }
+
+  /* Button hover */
+  .btn-hover {
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+                color 0.3s ease,
+                background-color 0.3s ease;
+  }
+  .btn-hover:hover {
+    transform: scale(1.05);
+  }
+  .btn-hover:active {
+    transform: scale(0.95);
+  }
+
+  /* Progress bar */
+  .progress-track {
+    position: relative;
+    height: 4px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 2px;
+    cursor: pointer;
+    overflow: visible;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #e63946, #ff6b6b);
+    border-radius: 2px;
+    position: relative;
+    transition: width 0.1s linear;
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 6px rgba(255, 107, 157, 0.55);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .progress-track:hover .progress-fill::after {
+    opacity: 1;
+  }
+
+  .progress-slider {
+    --progress: 0%;
+    height: 18px;
+    margin: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    touch-action: none;
+    background: transparent;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .progress-slider::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #ff6b9d 0 var(--progress), rgba(255,255,255,0.14) var(--progress) 100%);
+  }
+
+  .progress-slider::-moz-range-track {
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.14);
+  }
+
+  .progress-slider::-moz-range-progress {
+    height: 4px;
+    border-radius: 999px;
+    background: #ff6b9d;
+  }
+
+  .progress-slider::-webkit-slider-thumb {
+    width: 12px;
+    height: 12px;
+    margin-top: -4px;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 0;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 8px rgba(255,107,157,0.65);
+    transition: transform 100ms ease;
+  }
+
+  .progress-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border: 0;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 8px rgba(255,107,157,0.65);
+  }
+
+  .progress-slider:active::-webkit-slider-thumb {
+    transform: scale(1.16);
+  }
+
+  /* Scrollbar for playlist */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 107, 157, 0.35);
+    border-radius: 2px;
+  }
+
+  /* Main page fade in */
+  .main-reveal {
+    animation: main-brighten 1.6s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+  }
+
+  @keyframes main-brighten {
+    0% { opacity: 0; filter: brightness(0.15); }
+    15% { opacity: 1; filter: brightness(0.15); } 
+    100% { opacity: 1; filter: brightness(1); }
+  }
+
+  /* Search results highlight */
+  .search-result-item {
+    transition: background 0.2s;
+  }
+  .search-result-item:hover {
+    background: rgba(255, 107, 157, 0.12);
+  }
+
+  /* Curated playlist browser */
+  .playlist-collection-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .playlist-collection-button {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.035);
+    transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+  }
+
+  .playlist-collection-button:active {
+    transform: scale(0.98);
+  }
+
+  .playlist-collection-button.is-selected {
+    border-color: rgba(255, 107, 157, 0.45);
+    background: linear-gradient(135deg, rgba(255, 107, 157, 0.15), rgba(147, 112, 219, 0.14));
+  }
+
+  .playlist-monogram {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 50%;
+    font-size: 0.92rem;
+    line-height: 1;
+    background: linear-gradient(145deg, rgba(255,107,157,0.18), rgba(147,112,219,0.14));
+    border: 1px solid rgba(255,182,213,0.12);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Make collection list scrollable vertically/horizontally if there are 6+ playlists */
+  .playlist-collection-grid {
+    display: flex;
+    overflow-x: auto;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-inline: contain;
+    touch-action: pan-x;
+    contain: layout paint;
+  }
+
+  .playlist-collection-grid::-webkit-scrollbar {
+    height: 3px;
+  }
+
+  .playlist-collection-grid::-webkit-scrollbar-thumb {
+    background: rgba(255, 107, 157, 0.25);
+    border-radius: 1.5px;
+  }
+
+  .playlist-collection-button {
+    flex: 0 0 160px;
+    scroll-snap-align: start;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .playlist-track-list {
+    max-height: min(35dvh, 18rem);
+    padding-right: 0.15rem;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    contain: layout paint style;
+  }
+
+  .playlist-track-button {
+    display: flex;
+    width: 100%;
+    min-height: 2.5rem;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.3rem 0.45rem;
+    border-radius: 0.65rem;
+    transition: color 120ms ease, background-color 120ms ease, transform 100ms ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .playlist-collection-button:hover {
+      border-color: rgba(255, 107, 157, 0.32);
+      background: rgba(255, 107, 157, 0.08);
+    }
+
+    .playlist-track-button:hover {
+      background: rgba(255, 255, 255, 0.055);
+    }
+  }
+
+  .playlist-track-button:active {
+    transform: scale(0.99);
+  }
+
+  .playlist-popover .glass-card {
+    background: rgba(24, 14, 36, 0.84);
+    backdrop-filter: blur(16px) saturate(1.12);
+    -webkit-backdrop-filter: blur(16px) saturate(1.12);
+  }
+
+  .playlist-track-button.is-current {
+    background: linear-gradient(90deg, rgba(255, 107, 157, 0.16), rgba(147, 112, 219, 0.08));
+  }
+
+  .playlist-track-button .equalizer {
+    height: 13px;
+    transform: scale(0.72);
+  }
+
+  .track-loader {
+    width: 0.85rem;
+    height: 0.85rem;
+    border: 2px solid rgba(255, 255, 255, 0.16);
+    border-top-color: #ff6b9d;
+    border-radius: 50%;
+    animation: spin-disc 700ms linear infinite;
+  }
+
+  @media (max-width: 640px) {
+    .intro-screen {
+      padding: max(1rem, env(safe-area-inset-top, 1rem)) max(1rem, env(safe-area-inset-right, 1rem)) max(1rem, env(safe-area-inset-bottom, 1rem)) max(1rem, env(safe-area-inset-left, 1rem));
+    }
+
+    .bg-layer {
+      background-position: 64% 32%;
+      object-position: 64% 32%;
+    }
+
+    .hero-copy {
+      max-width: 66% !important;
+    }
+
+    .glass-card {
+      background: rgba(22, 12, 34, 0.8);
+      backdrop-filter: blur(14px) saturate(1.12);
+      -webkit-backdrop-filter: blur(14px) saturate(1.12);
+    }
+  }
+
+  @media (max-width: 640px) and (orientation: landscape) {
+    .bg-layer {
+      background-position: 60% 32%;
+      object-position: 60% 32%;
+    }
+
+    .hero-copy {
+      max-width: 48% !important;
+    }
+
+    .playlist-track-list {
+      max-height: 26dvh;
+    }
+  }
+
+  @media (max-height: 560px) {
+    .playlist-popover .glass-card {
+      padding: 0.7rem;
+    }
+
+    .playlist-collection-grid {
+      margin-bottom: 0.45rem;
+    }
+
+    .playlist-collection-button {
+      padding: 0.35rem;
+    }
+
+    .playlist-monogram {
+      width: 1.7rem;
+      height: 1.7rem;
+    }
+
+    .playlist-track-list {
+      max-height: 20dvh;
+    }
+
+    .playlist-track-button {
+      min-height: 2.15rem;
+      padding-block: 0.2rem;
+    }
+  }
+
+  /* ── Lightweight Spider-Man extras ── */
+  .top-brand,
+  .maker-credit {
+    position: absolute;
+    top: max(0.7rem, env(safe-area-inset-top, 0.7rem));
+    z-index: 20;
+    margin: 0;
+    color: rgba(255, 140, 185, 0.78);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    text-shadow: 0 1px 8px rgba(20, 0, 25, 0.6);
+    padding: 0.3rem 0.45rem;
+    border-radius: 0.45rem;
+    background: linear-gradient(135deg, rgba(45, 12, 40, 0.36), rgba(15, 6, 24, 0.28));
+    border: 1px solid rgba(255, 107, 157, 0.12);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  }
+
+  .top-brand {
+    left: max(0.85rem, env(safe-area-inset-left, 0.85rem));
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    pointer-events: none;
+  }
+
+  .maker-credit {
+    right: max(0.85rem, env(safe-area-inset-right, 0.85rem));
+  }
+
+  .maker-credit span {
+    color: rgba(255, 140, 185, 0.8);
+  }
+
+  .maker-credit a {
+    color: rgba(245, 194, 36, 0.82);
+    font-weight: 700;
+    pointer-events: auto;
+    text-decoration: none;
+    transition: color 140ms ease, text-shadow 140ms ease;
+  }
+
+  .maker-credit a:hover,
+  .maker-credit a:focus-visible {
+    color: rgba(255, 214, 74, 1);
+    text-shadow: 0 0 8px rgba(245, 194, 36, 0.32);
+    outline: none;
+  }
+
+  .one-more-counter {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 0.35rem);
+    transform: translateX(-50%);
+    margin: 0;
+    color: rgba(255, 190, 225, 0.6);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .player-shell {
+    position: relative;
+    width: 100%;
+    max-width: min(94vw, 430px);
+  }
+
+  .anime-player {
+    width: 100%;
+    padding: 0.55rem 0.65rem 0.5rem;
+    border-radius: 1.1rem;
+    background: linear-gradient(150deg, rgba(42, 22, 58, 0.82), rgba(18, 10, 30, 0.76));
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    border: 1px solid rgba(255, 205, 232, 0.16);
+    box-shadow:
+      0 12px 30px rgba(6, 0, 16, 0.36),
+      inset 0 1px 0 rgba(255, 235, 248, 0.12);
+  }
+
+  .anime-player-main {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .anime-cover-wrap {
+    position: relative;
+    width: 3.15rem;
+    height: 3.15rem;
+    display: grid;
+    place-items: center;
+  }
+
+  .anime-cover-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -0.18rem;
+    border-radius: 50%;
+    background: conic-gradient(from 140deg, rgba(255,138,190,0.42), rgba(168,132,255,0.2), rgba(255,138,190,0.42));
+    opacity: 0.48;
+  }
+
+  .anime-cover {
+    position: relative;
+    z-index: 1;
+    width: 2.75rem;
+    height: 2.75rem;
+    overflow: hidden;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 226, 242, 0.22);
+    background: linear-gradient(135deg, #ff6b9d, #6d28d9);
+    box-shadow:
+      0 6px 14px rgba(8, 0, 18, 0.32),
+      inset 0 0 10px rgba(0, 0, 0, 0.26);
+  }
+
+  .anime-cover img,
+  .anime-cover span {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: grid;
+    place-items: center;
+    font-size: 1rem;
+  }
+
+  .anime-cover i {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(6, 3, 14, 0.84);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.55);
+  }
+
+  .anime-track-panel {
+    min-width: 0;
+  }
+
+  .anime-track-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+    margin-bottom: 0.06rem;
+  }
+
+  .anime-now-label {
+    color: rgba(255, 190, 225, 0.45);
+    font-size: 0.44rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .anime-song-title {
+    color: rgba(255,255,255,0.95);
+    font-size: 0.76rem;
+    font-weight: 700;
+    line-height: 1.15;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .anime-song-artist {
+    margin-top: 0.08rem;
+    color: rgba(255,255,255,0.42);
+    font-size: 0.58rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .anime-side-actions {
+    display: flex;
+    flex-direction: row;
+    gap: 0.35rem;
+  }
+
+  .anime-icon-button,
+  .anime-control-button {
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    color: rgba(255,255,255,0.58);
+    background: rgba(255, 255, 255, 0.055);
+    border: 1px solid rgba(255, 255, 255, 0.085);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .anime-icon-button {
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+
+  .anime-icon-button.is-active {
+    color: #ff9cc5;
+    background: rgba(255,107,157,0.14);
+    border-color: rgba(255,107,157,0.24);
+  }
+
+  .anime-control-dock {
+    width: max-content;
+    margin: 0.45rem auto 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .anime-control-button {
+    width: 1.55rem;
+    height: 1.55rem;
+  }
+
+  .anime-play-button {
+    display: grid;
+    place-items: center;
+    width: 2.0rem;
+    height: 2.0rem;
+    border-radius: 999px;
+    color: #fff;
+    background: radial-gradient(circle at 35% 28%, #ff9fc7, #ff5c9a 45%, #7c3aed 100%);
+    box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  }
+
+  .anime-progress-row {
+    display: grid;
+    grid-template-columns: 1.7rem minmax(0, 1fr) 1.7rem;
+    align-items: center;
+    gap: 0.38rem;
+  }
+
+  .anime-progress-row span {
+    color: rgba(255, 255, 255, 0.34);
+    font-size: 0.54rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 640px) {
+    .top-brand,
+    .maker-credit {
+      font-size: 8px;
+    }
+
+    .one-more-counter {
+      font-size: 7px;
+    }
+
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ──── CONCERT SEARCHLIGHTS (DISCO FX) ──── */
+  .concert-lights-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    overflow: hidden;
+    mix-blend-mode: screen;
+    transition: opacity 0.5s ease;
+  }
+  
+  .searchlight {
+    position: absolute;
+    top: -10%;
+    width: 100px;
+    height: 150vh;
+    background: linear-gradient(180deg, var(--beam-theme), transparent 80%);
+    transform-origin: top center;
+    border-radius: 100% 100% 0 0;
+    filter: blur(12px);
+    opacity: 0.9;
+    will-change: transform, opacity;
+  }
+  
+  .searchlight-1 { left: 10%; animation: sweep-fast 2s infinite alternate ease-in-out; }
+  .searchlight-2 { left: 25%; animation: sweep-fast 1.7s infinite alternate-reverse ease-in-out; }
+  .searchlight-3 { left: 40%; animation: sweep-fast 2.2s infinite alternate ease-in-out; }
+  .searchlight-4 { left: 50%; animation: sweep-fast 1.5s infinite alternate-reverse ease-in-out; }
+  .searchlight-5 { left: 60%; animation: sweep-fast 2.1s infinite alternate ease-in-out; }
+  .searchlight-6 { left: 75%; animation: sweep-fast 1.8s infinite alternate-reverse ease-in-out; }
+  .searchlight-7 { left: 90%; animation: sweep-fast 2.4s infinite alternate ease-in-out; }
+  
+  @keyframes sweep-fast {
+    0% { transform: rotate(-45deg) scale(1.2); opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { transform: rotate(45deg) scale(0.8); opacity: 0.4; }
+  }
