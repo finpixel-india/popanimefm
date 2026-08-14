@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import Draggable from 'react-draggable';
+import anyAscii from 'any-ascii';
 
 /* ─── Background sources ───
    Priority:
@@ -1037,6 +1039,26 @@ function IntroAtmosphere() {
 export default function App() {
   const LOCAL_KEY = 'spidey-one-more-song';
 
+  const parseLrc = (lrcString: string) => {
+    const lines = lrcString.split('\n');
+    const result: { time: number; text: string }[] = [];
+    const regex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
+    for (const line of lines) {
+      const match = line.match(regex);
+      if (match) {
+        const min = parseInt(match[1]);
+        const sec = parseInt(match[2]);
+        const ms = match[3].length === 2 ? parseInt(match[3]) * 10 : parseInt(match[3]);
+        const time = min * 60 + sec + ms / 1000;
+        const text = match[4].trim();
+        if (text) {
+          result.push({ time, text });
+        }
+      }
+    }
+    return result;
+  };
+
   const loadSaved = () => {
     try {
       const raw = localStorage.getItem(LOCAL_KEY);
@@ -1091,6 +1113,15 @@ export default function App() {
   const [showDiscoPanel, setShowDiscoPanel] = useState(false);
   const discoButtonRef = useRef<HTMLButtonElement>(null);
   const discoPopoverRef = useRef<HTMLDivElement>(null);
+  
+  /* Lyrics */
+  const [showLyrics, setShowLyrics] = useState(false);
+  const [lyrics, setLyrics] = useState<{time: number, text: string}[] | null>(null);
+  const [lyricsLoading, setLyricsLoading] = useState(false);
+  const [lyricsError, setLyricsError] = useState('');
+  const lyricsPopoverRef = useRef<HTMLDivElement>(null);
+  const lyricsLineRefs = useRef<(HTMLParagraphElement | null)[]>([]);
+
   const [playlistMessage, setPlaylistMessage] = useState('');
   const [oneMoreCount, setOneMoreCount] = useState(() => Number(saved?.oneMoreCount) || 1);
 
@@ -1397,10 +1428,66 @@ export default function App() {
       });
       persistenceTimerRef.current = null;
     }, 1000);
-  }, [
-    selectedCollectionId, activeCollectionId, currentIdx, currentTime, isPlaying, showIntro, oneMoreCount, 
+  }, [selectedCollectionId, activeCollectionId, currentIdx, currentTime, isPlaying, showIntro, oneMoreCount, 
     currentVideoIdx, showDisco, discoColor, discoIntensity, playlist, saveState
   ]);
+
+  /* ═══════════════════════════════════ LYRICS ═══════════════════════════════════ */
+  useEffect(() => {
+    if (!showLyrics || !currentSong) return;
+    let active = true;
+    setLyricsLoading(true);
+    setLyricsError('');
+    
+    // Attempt exact match first
+    fetch(`https://lrclib.net/api/get?track_name=${encodeURIComponent(currentSong.name)}&artist_name=${encodeURIComponent(currentSong.artist)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!active) return;
+        if (data && data.syncedLyrics) {
+          setLyrics(parseLrc(data.syncedLyrics));
+          setLyricsError('');
+        } else {
+          setLyrics(null);
+          setLyricsError('No synced lyrics available.');
+        }
+        setLyricsLoading(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setLyrics(null);
+        setLyricsError('Failed to fetch lyrics.');
+        setLyricsLoading(false);
+      });
+      
+    return () => { active = false; };
+  }, [showLyrics, currentSong]);
+
+  const activeLineIndex = useMemo(() => {
+    if (!lyrics) return -1;
+    for (let i = lyrics.length - 1; i >= 0; i--) {
+      if (currentTime >= lyrics[i].time - 0.2) { // 200ms offset for better feel
+        return i;
+      }
+    }
+    return -1;
+  }, [currentTime, lyrics]);
+
+  useEffect(() => {
+    if (activeLineIndex >= 0 && lyricsLineRefs.current[activeLineIndex]) {
+      lyricsLineRefs.current[activeLineIndex]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
+  }, [activeLineIndex]);
+  
+  const toggleLyrics = useCallback(() => {
+    setShowLyrics((p) => !p);
+    if (showSearch) setShowSearch(false);
+    if (showPlaylist) setShowPlaylist(false);
+    if (showDiscoPanel) setShowDiscoPanel(false);
+  }, [showSearch, showPlaylist, showDiscoPanel]);
 
   const handleIntro = useCallback(() => {
     if (introFading) return;
@@ -1434,6 +1521,9 @@ export default function App() {
       if (showDiscoPanel && discoPopoverRef.current && !discoPopoverRef.current.contains(target) && !target.closest('.disco-toggle-button')) {
         setShowDiscoPanel(false);
       }
+      if (showLyrics && lyricsPopoverRef.current && !lyricsPopoverRef.current.contains(target) && !target.closest('.lyrics-button')) {
+        setShowLyrics(false);
+      }
     };
 
     const dismissOnEscape = (event: KeyboardEvent) => {
@@ -1441,6 +1531,7 @@ export default function App() {
         setShowSearch(false);
         setShowPlaylist(false);
         setShowDiscoPanel(false);
+        setShowLyrics(false);
       }
     };
 
@@ -1533,12 +1624,56 @@ export default function App() {
 
             <div className="flex-1" aria-hidden="true" />
 
+            {/* DRAGGABLE LYRICS OVERLAY */}
+            {showLyrics && (
+              <Draggable bounds="parent" handle=".lyrics-drag-handle">
+                <div className="absolute z-[100] left-4 bottom-32 flex flex-col items-start justify-center pointer-events-auto" style={{ width: 'min(90vw, 500px)', cursor: 'grab' }}>
+                  <div className="lyrics-drag-handle w-full absolute inset-0 z-10" title="Drag to move" />
+                  {lyricsLoading ? (
+                    <p className="text-white/50 text-sm relative z-20 pointer-events-none px-4">Loading lyrics...</p>
+                  ) : lyricsError ? (
+                    <p className="text-white/50 text-sm relative z-20 pointer-events-none px-4">{lyricsError}</p>
+                  ) : lyrics ? (
+                    <div className="relative w-full h-[110px] pointer-events-none drop-shadow-md overflow-hidden">
+                      {lyrics.map((line, i) => {
+                        const offset = i - activeLineIndex;
+                        if (offset < -1 || offset > 1) return null; // strictly 3 lines
+
+                        const isCenter = offset === 0;
+
+                        return (
+                          <p
+                            key={i}
+                            className="absolute w-full text-left transition-all duration-500 font-medium px-4"
+                            style={{
+                              top: '50%',
+                              transform: `translateY(calc(-50% + ${offset * 2.2}rem)) scale(${isCenter ? 1 : 0.95})`,
+                              transformOrigin: 'left center',
+                              opacity: isCenter ? 1 : 0.4,
+                              textShadow: isCenter ? '0 0 15px rgba(255,255,255,0.5), 0 2px 8px rgba(0,0,0,0.8)' : '0 1px 4px rgba(0,0,0,0.8)',
+                              fontWeight: isCenter ? 800 : 500,
+                              fontSize: isCenter ? '1.25rem' : '1rem',
+                              color: 'white',
+                            }}
+                          >
+                            {anyAscii(line.text)}
+                          </p>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              </Draggable>
+            )}
+
             {/* ──── BOTTOM: MUSIC PLAYER ──── */}
             <div className="w-full flex justify-center relative">
               <p className="one-more-counter" aria-live="polite">
                 ONE MORE SONG × {String(oneMoreCount).padStart(2, '0')}
               </p>
               {/* Popovers */}
+              {/* Popovers */}
+
               <div ref={searchPopoverRef} className={`popover-container absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-[min(92vw,380px)] z-50 ${showSearch ? 'is-open' : ''}`}>
                 <div className="glass-card rounded-2xl p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -1728,6 +1863,14 @@ export default function App() {
                         aria-label="Toggle Disco Panel"
                       >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                      </button>
+                      <button
+                        onClick={toggleLyrics}
+                        className={`anime-icon-button btn-hover lyrics-button ${showLyrics ? 'is-active' : ''}`}
+                        aria-label="Toggle Lyrics"
+                        title="Toggle Lyrics"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
                       </button>
                       <button
                         ref={searchButtonRef}

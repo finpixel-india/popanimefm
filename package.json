@@ -9,9 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "any-ascii": "^0.3.3",
     "clsx": "2.1.1",
     "react": "19.2.6",
     "react-dom": "19.2.6",
+    "react-draggable": "^4.7.1",
     "tailwind-merge": "3.4.0"
   },
   "devDependencies": {
