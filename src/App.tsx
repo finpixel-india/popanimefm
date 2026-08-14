@@ -1626,30 +1626,31 @@ export default function App() {
 
             {/* DRAGGABLE LYRICS OVERLAY */}
             {showLyrics && (
-              <Draggable bounds="parent" handle=".lyrics-drag-handle">
-                <div className="absolute z-[100] left-4 bottom-32 flex flex-col items-start justify-center pointer-events-auto" style={{ width: 'min(90vw, 500px)', cursor: 'grab' }}>
+              <Draggable handle=".lyrics-drag-handle">
+                <div className="absolute z-[100] left-4 bottom-32 flex flex-col items-center justify-center pointer-events-auto" style={{ width: 'min(90vw, 500px)', cursor: 'grab' }}>
                   <div className="lyrics-drag-handle w-full absolute inset-0 z-10" title="Drag to move" />
                   {lyricsLoading ? (
-                    <p className="text-white/50 text-sm relative z-20 pointer-events-none px-4">Loading lyrics...</p>
+                    <p className="text-white/50 text-sm relative z-20 pointer-events-none px-4 text-center">Loading lyrics...</p>
                   ) : lyricsError ? (
-                    <p className="text-white/50 text-sm relative z-20 pointer-events-none px-4">{lyricsError}</p>
+                    <p className="text-white/50 text-sm relative z-20 pointer-events-none px-4 text-center">{lyricsError}</p>
                   ) : lyrics ? (
-                    <div className="relative w-full h-[110px] pointer-events-none drop-shadow-md overflow-hidden">
+                    <div className="relative w-full h-[150px] pointer-events-none drop-shadow-md overflow-hidden flex flex-col items-center">
                       {lyrics.map((line, i) => {
                         const offset = i - activeLineIndex;
-                        if (offset < -1 || offset > 1) return null; // strictly 3 lines
+                        if (offset < -2 || offset > 2) return null; // strictly 5 lines rendered for animation
 
                         const isCenter = offset === 0;
 
                         return (
                           <p
                             key={i}
-                            className="absolute w-full text-left transition-all duration-500 font-medium px-4"
+                            className="absolute w-full text-center transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] font-medium px-4 flex items-center justify-center"
                             style={{
-                              top: '50%',
-                              transform: `translateY(calc(-50% + ${offset * 2.2}rem)) scale(${isCenter ? 1 : 0.95})`,
-                              transformOrigin: 'left center',
-                              opacity: isCenter ? 1 : 0.4,
+                              height: '40px',
+                              top: '55px',
+                              transform: `translateY(${offset * 40}px) scale(${isCenter ? 1 : 0.95})`,
+                              transformOrigin: 'center center',
+                              opacity: isCenter ? 1 : (Math.abs(offset) === 1 ? 0.4 : 0),
                               textShadow: isCenter ? '0 0 15px rgba(255,255,255,0.5), 0 2px 8px rgba(0,0,0,0.8)' : '0 1px 4px rgba(0,0,0,0.8)',
                               fontWeight: isCenter ? 800 : 500,
                               fontSize: isCenter ? '1.25rem' : '1rem',
