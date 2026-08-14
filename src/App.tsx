@@ -1439,26 +1439,48 @@ export default function App() {
     setLyricsLoading(true);
     setLyricsError('');
     
-    // Attempt exact match first
-    fetch(`https://lrclib.net/api/get?track_name=${encodeURIComponent(currentSong.name)}&artist_name=${encodeURIComponent(currentSong.artist)}`)
-      .then(res => res.json())
-      .then(data => {
-        if (!active) return;
-        if (data && data.syncedLyrics) {
-          setLyrics(parseLrc(data.syncedLyrics));
-          setLyricsError('');
-        } else {
+    const fetchLyrics = async () => {
+      try {
+        // 1. Exact Match
+        const exactRes = await fetch(`https://lrclib.net/api/get?track_name=${encodeURIComponent(currentSong.name)}&artist_name=${encodeURIComponent(currentSong.artist)}`);
+        if (exactRes.ok) {
+          const data = await exactRes.json();
+          if (data && data.syncedLyrics) {
+            if (active) { setLyrics(parseLrc(data.syncedLyrics)); setLyricsError(''); setLyricsLoading(false); }
+            return;
+          }
+        }
+        
+        // 2. Fuzzy Search Fallback
+        const searchRes = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(currentSong.name + ' ' + currentSong.artist)}`);
+        if (searchRes.ok) {
+          const searchData = await searchRes.json();
+          if (Array.isArray(searchData)) {
+            // Find first result with synced lyrics
+            const syncedResult = searchData.find((item: any) => item.syncedLyrics);
+            if (syncedResult) {
+              if (active) { setLyrics(parseLrc(syncedResult.syncedLyrics)); setLyricsError(''); setLyricsLoading(false); }
+              return;
+            }
+          }
+        }
+        
+        // 3. Complete failure
+        if (active) {
           setLyrics(null);
           setLyricsError('No synced lyrics available.');
+          setLyricsLoading(false);
         }
-        setLyricsLoading(false);
-      })
-      .catch(() => {
-        if (!active) return;
-        setLyrics(null);
-        setLyricsError('Failed to fetch lyrics.');
-        setLyricsLoading(false);
-      });
+      } catch (err) {
+        if (active) {
+          setLyrics(null);
+          setLyricsError('Failed to fetch lyrics.');
+          setLyricsLoading(false);
+        }
+      }
+    };
+    
+    fetchLyrics();
       
     return () => { active = false; };
   }, [showLyrics, currentSong]);
