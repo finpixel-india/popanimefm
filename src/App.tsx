@@ -1071,7 +1071,9 @@ export default function App() {
   const [availableVideos, setAvailableVideos] = useState<string[]>([
     BACKGROUND_VIDEO_SRC,
     '/videos/background2.mp4',
-    '/videos/background3.mp4'
+    '/videos/background3.mp4',
+    '/videos/background4.mp4',
+    '/videos/background5.mp4'
   ]);
   const [currentVideoIdx, setCurrentVideoIdx] = useState(() => {
     if (saved?.currentVideoIdx !== undefined && Number.isInteger(saved.currentVideoIdx)) {
